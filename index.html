@@ -12,7 +12,10 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
     font:13px/1.5 "PingFang SC","Helvetica Neue",Arial,sans-serif;overflow:hidden}
-  #c{position:fixed;inset:0;display:block}
+  /* canvas 是 replaced element：width:auto 会用固有宽度（= 绘制缓冲宽）。
+     dpr=2 时缓冲是视口的 2 倍，若不显式钉死 100%，canvas 会被布局成 2 倍大、
+     只有左上 1/4 可见，其中心正好落在视口右下角。必须写死宽高 100%。 */
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block}
   .panel{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:10px;
     backdrop-filter:blur(8px);box-shadow:0 8px 30px rgba(0,0,0,.45)}
   /* 顶栏 */
@@ -53,9 +56,36 @@
   .tchip.off{opacity:.4}
   #customSite{display:none}
   #customSite.show{display:flex}
-  #linkPanel{display:none;left:292px;bottom:118px;width:258px;padding:10px 12px;font-size:12px;z-index:6}
+  #linkPanel{display:none;left:292px;bottom:118px;width:272px;padding:10px 12px;font-size:12px;z-index:6;
+    max-height:calc(100vh - 200px);overflow:auto}
   #linkPanel.show{display:block}
   .lp-head{display:flex;justify-content:space-between;font-weight:600;margin-bottom:8px}
+  /* 链路图例 */
+  .lg{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:7px;font-size:10.5px;color:#8fa0b2}
+  .lg i{display:inline-block;width:14px;height:0;border-top:2px solid;margin-right:4px;vertical-align:middle}
+  .lg b{font-weight:500;color:#b9c6d4}
+  /* 过顶预测抽屉 */
+  #passDrawer{position:fixed;top:0;right:-620px;width:620px;height:100%;background:#0a0f16;border-left:1px solid var(--line);
+    transition:right .25s ease;z-index:16;display:flex;flex-direction:column}
+  #passDrawer.show{right:0}
+  .pd-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .pd-body{padding:12px 16px;overflow:auto;flex:1}
+  .pd-ctl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;font-size:12px;color:#9fb0c2}
+  .pd-ctl select{padding:5px 6px;background:#0b0f15;color:var(--fg);border:1px solid var(--line);border-radius:6px;font-size:12px}
+  .pd-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 4px}
+  .pd-card{background:#101823;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .pd-card .k{color:var(--dim);font-size:10.5px;letter-spacing:.3px}
+  .pd-card .v{font-size:16px;font-variant-numeric:tabular-nums;margin-top:1px}
+  .pd-card .u{font-size:10px;color:#66707d;margin-left:2px}
+  .pd-tbl{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums;margin-top:6px}
+  .pd-tbl th{position:sticky;top:0;background:#0d141d;color:#7d8b9a;font-weight:500;text-align:left;
+    padding:5px 6px;border-bottom:1px solid var(--line);font-size:10.5px}
+  .pd-tbl td{padding:4px 6px;border-bottom:1px dashed #16202c;white-space:nowrap}
+  .pd-tbl tr:hover td{background:#101823}
+  .pd-tbl .h{color:#ffd166}
+  .pd-tbl .bar{height:5px;border-radius:3px;background:#2a6fa8}
+  .pd-scroll{max-height:calc(100vh - 350px);overflow:auto}
+  .pd-note{color:#6f7d8c;font-size:11px;line-height:1.6;margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
   .chk{display:flex;align-items:center;gap:6px;padding:3px 0;color:#c6d2de}
   .chk input[type=number]{background:#0b0f15;color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:2px 5px}
   .lp-sub{color:var(--dim);font-size:11px;margin:6px 0 4px}
@@ -92,7 +122,15 @@
   .gfoot{padding:10px 18px;border-top:1px solid var(--line);font-size:11px}
   #modal{position:fixed;inset:0;background:rgba(4,6,9,.72);display:none;align-items:center;justify-content:center;z-index:20}
   #modal.show{display:flex}
-  #modal .box{max-width:560px;background:#0d131b;border:1px solid var(--line);border-radius:12px;padding:20px 22px;line-height:1.7;font-size:13px}
+  #modal .box{max-width:620px;max-height:84vh;overflow:auto;background:#0d131b;border:1px solid var(--line);border-radius:12px;padding:20px 22px;line-height:1.7;font-size:13px}
+  /* 诊断面板：定位"地球不在中心"这类问题时，把坐标数据摆出来 */
+  #diagPanel{display:none;left:292px;top:68px;width:330px;padding:10px 12px;font-size:11.5px;z-index:14;
+    font-variant-numeric:tabular-nums;line-height:1.75;color:#9fb0c2}
+  #diagPanel.show{display:block}
+  #diagPanel b{color:#cfe6ff;font-weight:600}
+  #diagPanel .dl{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #16202c;padding:2px 0}
+  #diagPanel .dl span:last-child{color:#e6edf5;text-align:right}
+  #diagPanel .warn{color:#ffb454}
   #modal h3{margin:0 0 10px;font-size:15px}
   #modal .muted{color:var(--dim);font-size:12px}
   #results{overflow:auto;border-top:1px solid var(--line);max-height:38%}
@@ -126,18 +164,28 @@
     background:#07090d;z-index:9;flex-direction:column;gap:12px;color:var(--dim)}
   #loading .bar{width:220px;height:3px;background:#16202c;border-radius:2px;overflow:hidden}
   #loading .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+  #followTag{display:none;background:#3a2a12;border-color:#7a5a1e;color:#ffb454;cursor:pointer}
+  #followTag.show{display:inline-block}
+  /* 站点悬停提示 */
+  #tip{position:fixed;pointer-events:none;z-index:30;display:none;max-width:268px;
+    padding:7px 10px;background:rgba(11,16,23,.96);border:1px solid #2a3a4d;border-radius:8px;
+    font-size:11.5px;line-height:1.55;color:#dbe6f1;box-shadow:0 8px 24px rgba(0,0,0,.55)}
+  #tip .t1{color:#e6edf5;font-weight:600;font-size:12px}
+  #tip .t2{color:#8695a8}
+  #tip .t3{color:#ffb454;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="tip"></div>
 
 <div id="loading"><div>正在加载编目…</div><div class="bar"><i id="pbar"></i></div></div>
 
 <div class="panel" id="top">
   <h1>卫星轨道展示系统</h1>
-  <span class="tag" id="mode">近似递推</span><span class="tag" id="catdate">编目 —</span>
+  <span class="tag" id="mode">近似递推</span><span class="tag" id="catdate">编目 —</span><span class="tag" id="buildtag" title="app.js 的修改时间，用于确认看到的版本">构建 —</span><span class="tag" id="followTag" title="相机正跟着卫星走，地球因此不在画面中心；点击退出跟随">跟随中 · 点此退出</span>
   <span class="sp"></span>
-  <span class="meta" id="stat">—</span><button id="linkBtn" style="padding:4px 9px">链路</button><button id="ituBtn" style="padding:4px 9px">ITU 申报</button><button id="guideBtn" style="padding:4px 9px">操作指南</button><button id="about" style="padding:4px 9px">关于</button>
+  <span class="meta" id="stat">—</span><button id="diagBtn" style="padding:4px 9px">诊断</button><button id="linkBtn" style="padding:4px 9px">链路</button><button id="passBtn" style="padding:4px 9px">过顶预测</button><button id="ituBtn" style="padding:4px 9px">ITU 申报</button><button id="guideBtn" style="padding:4px 9px">操作指南</button><button id="about" style="padding:4px 9px">关于</button>
 </div>
 
 <div class="panel" id="left">
@@ -147,6 +195,18 @@
   <div id="cons"></div>
   <div class="sec">对象类型</div>
   <div id="types" class="types"></div>
+  <div class="sec">视角</div>
+  <div style="display:flex;gap:6px;padding:0 10px 6px;align-items:center">
+    <button id="viewReset" style="flex:1;padding:6px 8px;font-size:12px">复位视角</button>
+    <select id="viewAxis" title="锁定观察轴为地轴（极地俯视）"
+      style="padding:5px;background:#0b0f15;color:var(--fg);border:1px solid var(--line);border-radius:6px;font-size:12px">
+      <option value="">自由视角</option>
+      <option value="n">锁定北极轴</option>
+      <option value="s">锁定南极轴</option>
+    </select>
+  </div>
+  <label class="chk" style="padding:0 10px 8px"><input type="checkbox" id="lockEarth" checked>
+    地球锁定在屏幕中心<span style="color:#5f6f80;font-size:11px">（取消后可跟随卫星）</span></label>
   <label class="chk" style="padding:6px 12px"><input type="checkbox" id="trkAll"> 星座轨迹 <span id="trkInfo" style="color:#6f7d8c;font-size:11px"></span></label>
   <div class="coverbar">
     <button id="cover">覆盖范围</button>
@@ -203,11 +263,10 @@
       <div class="grow"><kbd>左键拖动</kbd><span>旋转地球</span></div>
       <div class="grow"><kbd>滚轮 / 双指</kbd><span>平滑缩放</span></div>
       <div class="grow"><kbd>右键拖动</kbd><span>上下缩放（拖上放大）</span></div>
-      <div class="grow"><kbd>双击空白</kbd><span>回到全球视角</span></div>
+      <div class="grow"><kbd>双击空白 / R</kbd><span>复位视角（回到全球、退出跟随）</span></div>
       <div class="grow"><kbd>双击卫星</kbd><span>选中并跟随</span></div>
-      <div class="grow"><kbd>← → ↑ ↓</kbd><span>旋转视角</span></div>
-      <div class="grow"><kbd>+ / -</kbd><span>缩放</span></div>
-      <div class="grow"><kbd>R</kbd><span>复位视角</span></div>
+      <div class="grow"><kbd>← → ↑ ↓</kbd><span>旋转视角（俯仰上限已放开到 ±89°，可逼近极地）</span></div>
+      <div class="grow"><kbd>左栏「视角」</kbd><span>复位视角按钮；「锁定北极轴 / 南极轴」= 相机沿地轴俯视；「地球锁定在屏幕中心」默认开启，任何操作都不会把地球甩出画面中心</span></div>
       <h4>选中与查询</h4>
       <div class="grow"><kbd>单击卫星</kbd><span>选中并显示轨道参数</span></div>
       <div class="grow"><kbd>搜索框</kbd><span>名称 / NORAD / 中文别名（北斗、千帆、星链…）</span></div>
@@ -219,13 +278,16 @@
       <div class="grow"><kbd>对象类型</kbd><span>载荷 / 火箭体 / 碎片 / 未知</span></div>
       <div class="grow"><kbd>星座轨迹</kbd><span>画出所有可见对象的轨道（与覆盖范围互斥）</span></div>
       <div class="grow"><kbd>覆盖范围</kbd><span>选中卫星的地面可见锥（与轨迹互斥），仰角门限 0/10/25/40°</span></div>
-      <div class="grow"><kbd>链路</kbd><span>地面站↔LEO/MEO、星间近邻，含链数与单向时延</span></div>
+      <div class="grow"><kbd>地面小圆点</kbd><span>ITU 已申报馈电站（39 座），按星座着色：灰白 Iridium / 绿 OneWeb / 蓝 Starlink / 橙 中国星网；悬停看站名与频段，点击即选中</span></div>
+      <div class="grow"><kbd>链路</kbd><span>接触图：站点↔卫星、全星座馈电站、星间三类链路（同轨/异轨/缝合线）+ 终端度数上限 + 太阳规避</span></div>
+      <div class="grow"><kbd>馈电站</kbd><span>下拉框分「ITU 已申报馈电站」与「演示点位」两组，选站后画覆盖圈与链路</span></div>
+      <div class="grow"><kbd>过顶预测</kbd><span>单星×全部馈电站 / 站点×星座，给出窗口表、覆盖率、最长断链</span></div>
       <h4>时间</h4>
       <div class="grow"><kbd>空格</kbd><span>暂停 / 继续</span></div>
       <div class="grow"><kbd>时间滑块</kbd><span>±24 小时内任意定位</span></div>
       <div class="grow"><kbd>倍速</kbd><span>1× / 10× / 60× / 300×</span></div>
       <h4>其他</h4>
-      <div class="grow"><kbd>ITU 申报</kbd><span>本地 38 739 条申报记录与名称匹配</span></div>
+      <div class="grow"><kbd>ITU 申报</kbd><span>本地 38 739 条空间网络申报 + 39 座地球站（馈电站）</span></div>
       <div class="grow"><kbd>关于</kbd><span>数据来源、许可与精度约定</span></div>
     </div>
   </div>
@@ -235,26 +297,76 @@
 <div id="modal"><div class="box">
   <h3>卫星轨道展示系统</h3>
   <div class="muted">自研展示层 · 数据与素材全部本地化</div>
-  <p><b>数据</b>：编目来自 CelesTrak（GP/TLE），含 3 万余在轨与碎片对象；ITU 申报数据为另一数据集，见项目文档。</p>
+  <p><b>数据</b>：编目来自 CelesTrak（GP/TLE），含 3 万余在轨与碎片对象；ITU 申报数据为另一数据集（空间网络 38 739 条 + 地球站/馈电站 39 座），见项目文档。</p>
   <p><b>许可</b>：three.js 0.160.0（MIT）、satellite.js 5.0.0（MIT）、NASA Blue Marble 贴图（公有领域）；卫星模型由本项目程序化生成。<b>未使用任何 AGPL 代码。</b></p>
   <p><b>精度约定</b>：点云用二体近似递推（速度优先），选中目标与过境计算用 SGP4 精确递推。TLE 时效以顶栏「编目」日期为准。</p>
-  <p><b>覆盖范围</b>：按几何公式计算——地心角 ψ = arccos(R/(R+h)·cosε) − ε，地面半径 = R·ψ；R 为地球半径，h 由所选卫星瞬时位置求得，ε 为可选仰角门限（0°/10°/25°/40°）。这是<b>几何可见范围</b>，与实际波束赋形、天线增益覆盖不同；覆盖范围与星座轨迹互斥显示，避免画面互相遮挡。</p>
+  <p><b>覆盖范围</b>：按几何公式计算——地心角 ψ = arccos(R/(R+h)·cosε) − ε，地面半径 = R·ψ；R 为地球半径，h 取所选馈电站所属星座的<b>中位轨道高度</b>（无归属星座时按 LEO 典型 550 km），ε 为可选仰角门限（0°/10°/25°/40°）。这是<b>几何可见范围</b>，与实际波束赋形、天线增益覆盖不同；覆盖范围与星座轨迹互斥显示，避免画面互相遮挡。</p>
+  <p><b>馈电站</b>：来自 ITU 地球站库（active 子库 8 521 条中筛出有坐标且能归入星座的 <b>39 座</b>：Iridium 35、OneWeb 2、Starlink 1、中国星网 1）。ITU 申报只登记<b>关口站 / 典型地球站</b>，不含运营商商用网关全量，所以站点数远少于实际组网规模——这一点在「过顶预测」的覆盖率里会直接体现出来。</p>
+  <p><b>星间链路</b>：按三类拓扑建模——<b>同轨</b>（面内沿迹前后邻居，距离恒定不断链）、<b>异轨</b>（相邻轨道面同纬度幅角最近邻，距离随纬度伸缩）、<b>缝合线</b>（RAAN 环最大间隙两侧，相对运动反向、链路周期性中断）。轨道面由「倾角 + 高度壳」分组后按 RAAN 间隔聚类得到（真实 TLE 的 RAAN 有拟合噪声，不能按固定角度硬分桶）。每星同时维持的链路条数受<b>终端度数上限</b>约束（Iridium/Starlink/Kuiper/Telesat 取 4，OneWeb 与 Globalstar 无星间链路设计取 0）。开启「光学太阳规避」后，视线方向落入 3° 太阳禁区的链路会被剔除并单列灰色。链路总量上万条时画面按配额抽样绘制，<b>统计口径仍为真实总数</b>。</p>
+  <p><b>过顶预测</b>：单星×全部馈电站用 SGP4 精确递推（30 s 步长），站点×星座用二体近似（60 s 步长，上限 200 颗）。窗口 = 仰角高于门限的连续区间，输出覆盖率与最长断链——这是<b>几何可见性</b>预测，不含链路预算、雨衰、波束调度与星上资源约束。</p>
   <p><b>覆盖数据的可得性</b>：公开层面<b>没有</b>逐颗卫星的覆盖范围数据集。可得的只有：① 轨道根数（CelesTrak / Space-Track，逐对象）；② ITU Appendix 4 申报（GSO 带服务区轮廓，NGSO 一般填 worldwide + 参考天线方向图，见 RR Appendix 8 / ITU-R S.1528）；③ 运营商服务可用性地图（国家/区域级，非逐星）；④ 标准建模参数（3GPP TR 38.811/38.821 的最小仰角、小区半径等）。本页的覆盖圈因此是<b>由高度与仰角门限算出的几何footprint</b>，不是运营商实测波束图。</p>
   <p class="muted">快捷键：空格 暂停/继续 · Ctrl+Shift+K 搜索 · 拖拽旋转 · 滚轮缩放</p>
   <div style="text-align:right;margin-top:12px"><button id="closeAbout">关闭</button></div>
 </div></div>
 <div class="panel" id="linkPanel">
   <div class="lp-head">接触图（L2）<span id="linkClose" style="cursor:pointer;color:#8695a8">✕</span></div>
-  <div class="lp-sub">地面站</div>
+  <div class="lp-sub">地面站 / 馈电站 <span id="stInfo" style="color:#5f6f80"></span></div>
   <select id="station"></select>
   <div id="customSite">
     <input id="csLon" type="number" step="0.1" placeholder="经度">
     <input id="csLat" type="number" step="0.1" placeholder="纬度">
   </div>
-  <label class="chk"><input type="checkbox" id="lkGround" checked> 地面站 ↔ 卫星</label>
-  <label class="chk"><input type="checkbox" id="lkIsl" checked> 星间链路（同星座近邻）</label>
-  <label class="chk">最大星间距离 <input type="number" id="lkMax" value="2000" step="100" style="width:74px"> km</label>
+  <label class="chk"><input type="checkbox" id="lkGround" checked> 选中站点 ↔ 可见卫星</label>
+  <label class="chk"><input type="checkbox" id="lkFeeder" checked> 全星座馈电站馈电（每站最近 2 颗）</label>
+  <label class="chk"><input type="checkbox" id="lkIsl" checked> 星间链路</label>
+  <div class="lg">
+    <span><i style="border-color:#4fb6ff"></i><b>同轨</b></span>
+    <span><i style="border-color:#7dd3fc"></i><b>异轨</b></span>
+    <span><i style="border-color:#ff9ecd"></i><b>缝合线</b></span>
+    <span><i style="border-color:#ffb454"></i><b>馈电</b></span>
+    <span><i style="border-color:#35c68a"></i><b>用户</b></span>
+    <span style="color:#5f6f80">灰=太阳规避</span>
+  </div>
+  <label class="chk">最大星间距离 <input type="number" id="lkMax" value="5000" step="100" style="width:74px"> km</label>
+  <label class="chk">每星终端 ≤ <input type="number" id="lkDeg" value="4" min="0" max="8" step="1" style="width:46px"> 条</label>
+  <label class="chk"><input type="checkbox" id="lkSun"> 光学太阳规避（3° 禁区）</label>
   <div class="lp-stat" id="lkStat">未启用</div>
+</div>
+
+<div class="panel" id="diagPanel">
+  <div class="lp-head">视图诊断<span id="diagClose" style="cursor:pointer;color:#8695a8">✕</span></div>
+  <div id="diagBody"></div>
+  <div style="margin-top:8px;display:flex;gap:6px">
+    <button id="diagRefresh" style="flex:1;padding:5px">刷新</button>
+    <button id="diagCopy" style="flex:1;padding:5px">复制</button>
+  </div>
+</div>
+
+<div id="passDrawer">
+  <div class="pd-head">
+    <b>过顶预测</b>
+    <span class="muted">本地 SGP4 / 二体递推 · 窗口 = 仰角高于门限的连续区间</span>
+    <span style="flex:1"></span>
+    <button id="passClose">关闭</button>
+  </div>
+  <div class="pd-body">
+    <div class="pd-ctl">
+      <select id="passMode">
+        <option value="satAll">选中卫星 × 全部馈电站</option>
+        <option value="siteCon">指定站点 × 星座</option>
+        <option value="satSite">选中卫星 × 指定站点</option>
+      </select>
+      <select id="passSpan"><option value="6">6 小时</option><option value="12">12 小时</option>
+        <option value="24" selected>24 小时</option><option value="48">48 小时</option></select>
+      <select id="passEl"><option value="0">0°</option><option value="10" selected>10°</option>
+        <option value="25">25°</option><option value="40">40°</option></select>
+      <select id="passWhat"></select>
+      <button id="passRun">计算</button>
+    </div>
+    <div class="pd-cards" id="passCards"></div>
+    <div class="pd-scroll"><div id="passTable"></div></div>
+    <div class="pd-note" id="passNote"></div>
+  </div>
 </div>
 
 <div id="ituDrawer">
